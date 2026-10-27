@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>E-Waste EPR Registration & Target Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#172033;
+    --paper:#F3F6FA;
+    --paper-raised:#FFFFFF;
+    --copper:#2563EB;
+    --copper-dark:#1D4ED8;
+    --line:#CBD5E1;
+    --ok:#15803D;
+    --bad:#DC2626;
+    --shadow: 0 1px 0 rgba(31,46,40,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    padding:32px 16px 64px;
+  }
+  .sheet{
+    max-width:920px;
+    margin:0 auto;
+    background:var(--paper);
+    border-radius:2px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    overflow:hidden;
+  }
+  .masthead{
+    padding:36px 40px 28px;
+    border-bottom:2px solid var(--ink);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:24px;
+    flex-wrap:wrap;
+  }
+  .masthead h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:30px;
+    line-height:1.15;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .masthead p{
+    margin:0;
+    font-size:14px;
+    color:#475569;
+    max-width:46ch;
+  }
+  .masthead .ref{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:#475569;
+    text-align:right;
+    line-height:1.6;
+  }
+
+  .controls{
+    padding:24px 40px 8px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    flex-wrap:wrap;
+  }
+  .controls label{
+    font-size:13px;
+    font-weight:500;
+    color:#475569;
+  }
+  .fy-group{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .fy-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    padding:7px 12px;
+    border:1px solid var(--line);
+    background:var(--paper-raised);
+    color:var(--ink);
+    border-radius:2px;
+    cursor:pointer;
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .fy-btn:hover{ border-color:var(--copper); }
+  .fy-btn.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:var(--paper);
+  }
+  .rate-pill{
+    margin-left:auto;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    color:var(--copper-dark);
+    border:1px solid var(--copper);
+    padding:6px 12px;
+    border-radius:2px;
+    background:rgba(37,99,235,0.08);
+  }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin:20px 0 0;
+  }
+  thead th{
+    text-align:left;
+    font-size:11px;
+    font-weight:600;
+    color:#475569;
+    padding:0 40px 8px;
+    border-bottom:1px solid var(--ink);
+  }
+  thead th.num{ text-align:right; }
+  tbody td{
+    padding:14px 0;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+    vertical-align:middle;
+  }
+  tbody td:first-child{ padding-left:40px; }
+  tbody td:last-child{ padding-right:40px; }
+  tbody tr:last-child td{ border-bottom:none; }
+  td.num, th.num{
+    text-align:right;
+    font-family:'IBM Plex Mono', monospace;
+    font-variant-numeric:tabular-nums;
+  }
+  .company-name{ font-weight:600; }
+  .company-type{
+    display:block;
+    font-size:11px;
+    color:#475569;
+    font-weight:400;
+    margin-top:2px;
+  }
+  .status{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    padding:4px 9px;
+    border-radius:2px;
+    white-space:nowrap;
+  }
+  .status.compliant{ color:var(--ok); background:rgba(21,128,61,0.12); }
+  .status.non{ color:var(--bad); background:rgba(220,38,38,0.12); }
+
+  .recycled-input{
+    width:64px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    padding:4px 6px;
+    border:1px solid var(--line);
+    border-radius:2px;
+    background:var(--paper-raised);
+    color:var(--ink);
+    text-align:right;
+  }
+  .recycled-input:focus{ outline:none; border-color:var(--copper); }
+
+  .add-row{
+    padding:18px 40px 28px;
+    border-bottom:1px solid var(--ink);
+  }
+  .add-row summary{
+    cursor:pointer;
+    font-size:13px;
+    color:var(--copper-dark);
+    font-weight:500;
+    list-style:none;
+  }
+  .add-row summary::-webkit-details-marker{ display:none; }
+  .add-row summary:before{ content:"+ "; }
+  .add-row[open] summary:before{ content:"– "; }
+  .add-form{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+  .add-form input, .add-form select{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13px;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:2px;
+    background:var(--paper-raised);
+    color:var(--ink);
+  }
+  .add-form input[name="name"]{ flex:1 1 180px; }
+  .add-form input[type="number"]{ width:110px; }
+  .add-form button{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:8px 16px;
+    border:none;
+    border-radius:2px;
+    background:var(--ink);
+    color:var(--paper);
+    cursor:pointer;
+  }
+  .add-form button:hover{ background:var(--copper-dark); }
+
+  .basis{
+    padding:26px 40px 36px;
+  }
+  .basis h2{
+    font-family:'Fraunces', serif;
+    font-size:15px;
+    font-weight:600;
+    margin:0 0 12px;
+  }
+  .basis ol{
+    margin:0;
+    padding-left:20px;
+    font-size:13px;
+    line-height:1.65;
+    color:#334155;
+  }
+  .basis li{ margin-bottom:8px; }
+  .basis li:last-child{ margin-bottom:0; }
+  .basis strong{ color:var(--ink); }
+
+  @media (max-width:640px){
+    .masthead{ padding:28px 22px 22px; }
+    .controls{ padding:20px 22px 8px; }
+    thead th{ padding:0 22px 8px; }
+    tbody td:first-child{ padding-left:22px; }
+    tbody td:last-child{ padding-right:22px; }
+    .add-row, .basis{ padding-left:22px; padding-right:22px; }
+    thead th:nth-child(3){ display:none; }
+    tbody td:nth-child(3){ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+
+  <div class="masthead">
+    <div>
+      <h1>E-Waste Registration &amp; Recycling Target Ledger</h1>
+      <p>EPR obligations for manufacturers, producers, recyclers and refurbishers under the E-Waste (Management) Rules, 2022.</p>
+    </div>
+    <div class="ref">
+      Rules: E-Waste (Management)<br>Rules, 2022 · CPCB
+    </div>
+  </div>
+
+  <div class="controls">
+    <label>Financial year</label>
+    <div class="fy-group" id="fyGroup"></div>
+    <div class="rate-pill" id="ratePill"></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Company</th>
+        <th class="num">Generated (MT)</th>
+        <th class="num">Actual recycled (MT)</th>
+        <th class="num">EPR target (MT)</th>
+        <th class="num">Registration fee</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <details class="add-row">
+    <summary>Register another company</summary>
+    <form class="add-form" id="addForm">
+      <input name="name" type="text" placeholder="Company name" required>
+      <select name="type">
+        <option>Manufacturer</option>
+        <option>Producer</option>
+        <option>Recycler</option>
+        <option>Refurbisher</option>
+      </select>
+      <input name="generated" type="number" min="0" step="0.1" placeholder="Generated (MT)" required>
+      <input name="recycled" type="number" min="0" step="0.1" placeholder="Recycled (MT)" required>
+      <button type="submit">Add to ledger</button>
+    </form>
+  </details>
+
+  <div class="basis">
+    <h2>Basis for each calculation</h2>
+    <ol>
+      <li><strong>Target %</strong> — set by the recycling-target schedule in the E-Waste (Management) Rules, 2022: 60% for FY 2023-24/2024-25, 70% for FY 2025-26/2026-27, 80% from FY 2027-28 onward.</li>
+      <li><strong>EPR target (MT)</strong> — Annual E-Waste Generated × the Target % for the selected year.</li>
+      <li><strong>Registration fee</strong> — read off the CPCB fee slab against the computed target, not the raw generated quantity: under 50 MT ₹2,500; 50–100 MT ₹7,500; 100–1000 MT ₹1,50,000; 1000–5000 MT ₹10,00,000; above 5000 MT ₹15,00,000.</li>
+      <li><strong>Status</strong> — "Compliant" once actual recycled MT (self-reported) meets or exceeds the target; otherwise "Non-Compliant."</li>
+    </ol>
+  </div>
+
+</div>
+
+<script>
+  const FY_LIST = ["2023-24","2024-25","2025-26","2026-27","2027-28"];
+
+  function targetPct(fy){
+    if (fy === "2023-24" || fy === "2024-25") return 0.60;
+    if (fy === "2025-26" || fy === "2026-27") return 0.70;
+    return 0.80; // 2027-28 onward
+  }
+
+  function lookupFee(targetMt){
+    if (targetMt < 50) return 2500;
+    if (targetMt < 100) return 7500;
+    if (targetMt < 1000) return 150000;
+    if (targetMt < 5000) return 1000000;
+    return 1500000;
+  }
+
+  function formatINR(n){
+    return "₹" + n.toLocaleString('en-IN');
+  }
+
+  let companies = [
+    { name: "Dixon Technologies", type: "Manufacturer", generated: 1200, recycled: 900 },
+    { name: "Foxconn India",      type: "Manufacturer", generated: 3500, recycled: 2600 },
+    { name: "Tata Electronics",   type: "Producer",     generated: 850,  recycled: 700 },
+    { name: "Kaynes Technology",  type: "Recycler",     generated: 60,   recycled: 45 },
+    { name: "VVDN",               type: "Refurbisher",  generated: 30,   recycled: 20 },
+  ];
+
+  let currentFY = "2025-26";
+
+  function renderFYButtons(){
+    const group = document.getElementById('fyGroup');
+    group.innerHTML = "";
+    FY_LIST.forEach(fy => {
+      const btn = document.createElement('button');
+      btn.className = 'fy-btn' + (fy === currentFY ? ' active' : '');
+      btn.textContent = fy === "2027-28" ? "2027-28+" : fy;
+      btn.onclick = () => { currentFY = fy; render(); };
+      group.appendChild(btn);
+    });
+  }
+
+  function render(){
+    renderFYButtons();
+    document.getElementById('ratePill').textContent =
+      "Target rate: " + Math.round(targetPct(currentFY) * 100) + "%";
+
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = "";
+    companies.forEach((c, i) => {
+      const target = +(c.generated * targetPct(currentFY)).toFixed(1);
+      const fee = lookupFee(target);
+      const compliant = c.recycled >= target;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="company-name">${c.name}</span><span class="company-type">${c.type}</span></td>
+        <td class="num">${c.generated}</td>
+        <td class="num"><input class="recycled-input" type="number" min="0" step="0.1" value="${c.recycled}" data-idx="${i}"></td>
+        <td class="num">${target}</td>
+        <td class="num">${formatINR(fee)}</td>
+        <td><span class="status ${compliant ? 'compliant' : 'non'}">${compliant ? 'Compliant' : 'Non-Compliant'}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.recycled-input').forEach(inp => {
+      inp.addEventListener('input', e => {
+        const idx = +e.target.dataset.idx;
+        companies[idx].recycled = parseFloat(e.target.value) || 0;
+        render();
+        // restore focus after re-render
+        const newInp = tbody.querySelectorAll('.recycled-input')[idx];
+        if (newInp) { newInp.focus(); newInp.select(); }
+      });
+    });
+  }
+
+  document.getElementById('addForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target;
+    companies.push({
+      name: f.name.value.trim(),
+      type: f.type.value,
+      generated: parseFloat(f.generated.value) || 0,
+      recycled: parseFloat(f.recycled.value) || 0
+    });
+    f.reset();
+    render();
+  });
+
+  render();
+</script>
+
+</body>
+</html>
